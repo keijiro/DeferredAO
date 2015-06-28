@@ -1,4 +1,26 @@
-﻿Shader "Hidden/DeferredAO"
+﻿//
+// Deferred AO - G-buffer based SSAO effect
+//
+// Copyright (C) 2015 Keijiro Takahashi
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+Shader "Hidden/DeferredAO"
 {
     Properties
     {
@@ -7,22 +29,23 @@
     CGINCLUDE
 
     #include "UnityCG.cginc"
+
     #pragma multi_compile _ _RANGE_CHECK
     #pragma multi_compile _SAMPLE_LOW _SAMPLE_MEDIUM _SAMPLE_HIGH _SAMPLE_OVERKILL
 
     sampler2D _MainTex;
     float2 _MainTex_TexelSize;
 
-    float _Radius;
+	sampler2D_float _CameraDepthTexture;
+    sampler2D _CameraGBufferTexture2;
+
     float _Intensity;
+    float _Radius;
     float _FallOff;
 
     // Camera projection matrix
     // Note: UNITY_MATRIX_P doesn't work with pixel shaders.
     float4x4 _Projection;
-
-	sampler2D_float _CameraDepthTexture;
-    sampler2D _CameraGBufferTexture2;
 
     #if _SAMPLE_LOW
     const int SAMPLE_COUNT = 8;
@@ -31,7 +54,7 @@
     #elif _SAMPLE_HIGH
     const int SAMPLE_COUNT = 24;
     #else
-    const int SAMPLE_COUNT = 64;
+    const int SAMPLE_COUNT = 80;
     #endif
 
     float nrand(float2 uv, float dx, float dy)
@@ -100,7 +123,7 @@
         }
 
         float falloff = 1.0 - depth_o / _FallOff;
-        occ = occ / SAMPLE_COUNT * _Intensity * falloff;
+        occ *= _Intensity * falloff / SAMPLE_COUNT;
 
         return half4(lerp(src.rgb, (half3)0.0, occ), src.a);
     }

@@ -299,8 +299,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f6a516d891854931acf7fb785c812ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _intensity: 1
-  _sampleRadius: 2.5
+  _intensity: .879999995
+  _sampleRadius: 2.1500001
   _rangeCheck: 1
   _fallOffDistance: 100
   _sampleCount: 1
@@ -382,14 +382,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d637268abbbb5428e991dd9ec93136f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  positionFrequency: .200000003
-  rotationFrequency: .200000003
-  positionAmount: .5
+  positionFrequency: .100000001
+  rotationFrequency: .100000001
+  positionAmount: .300000012
   rotationAmount: 8
   positionComponents: {x: 1, y: 1, z: 1}
-  rotationComponents: {x: 1, y: 1, z: 0}
+  rotationComponents: {x: 1, y: 1, z: 1}
   positionOctave: 3
-  rotationOctave: 3
+  rotationOctave: 4
 --- !u!1 &833441179
 GameObject:
   m_ObjectHideFlags: 0

@@ -40,7 +40,7 @@ Material:
         first:
           name: _Tex
         second:
-          m_Texture: {fileID: 8900000, guid: db432b2a7e4374fcd9319054ff2600df, type: 3}
+          m_Texture: {fileID: 8900000, guid: d83fe4f986a674050b86ec6daca12692, type: 3}
           m_Scale: {x: 1, y: 1}
           m_Offset: {x: 0, y: 0}
       data:
@@ -101,7 +101,7 @@ Material:
       data:
         first:
           name: _Exposure
-        second: .699999988
+        second: .5
       data:
         first:
           name: _SunSize
