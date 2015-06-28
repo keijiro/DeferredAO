@@ -3,16 +3,15 @@
     Properties
     {
         _MainTex("-", 2D) = "" {}
-        _OccTex("-", 2D) = "" {}
     }
     CGINCLUDE
 
     #include "UnityCG.cginc"
+    #pragma multi_compile _ _RANGE_CHECK
+    #pragma multi_compile _SAMPLE_LOW _SAMPLE_MEDIUM _SAMPLE_HIGH _SAMPLE_OVERKILL
 
     sampler2D _MainTex;
     float2 _MainTex_TexelSize;
-
-    sampler2D _OccTex;
 
     float _Radius;
     float _Intensity;
@@ -25,7 +24,15 @@
 	sampler2D_float _CameraDepthTexture;
     sampler2D _CameraGBufferTexture2;
 
-    const int SAMPLE_COUNT = 15;
+    #if _SAMPLE_LOW
+    const int SAMPLE_COUNT = 8;
+    #elif _SAMPLE_MEDIUM
+    const int SAMPLE_COUNT = 16;
+    #elif _SAMPLE_HIGH
+    const int SAMPLE_COUNT = 24;
+    #else
+    const int SAMPLE_COUNT = 64;
+    #endif
 
     float nrand(float2 uv, float dx, float dy)
     {
@@ -48,10 +55,12 @@
 
     half4 frag_ao(v2f_img i) : SV_Target 
     {
+        half4 src = tex2D(_MainTex, i.uv);
+
         // Sample a linear depth on the depth buffer.
         float depth_o = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
         depth_o = LinearEyeDepth(depth_o);
-        if (depth_o > _FallOff) return 0;
+        if (depth_o > _FallOff) return src;
 
         // Sample a view-space normal vector on the g-buffer.
         float3 norm_o = tex2D(_CameraGBufferTexture2, i.uv).xyz * 2 - 1;
@@ -83,13 +92,16 @@
 
             // Occlusion test.
             float dist = pos_s.z - depth_s;
+            #if _RANGE_CHECK
             occ += (dist > 0.1) * (dist < _Radius);
+            #else
+            occ += (dist > 0.1);
+            #endif
         }
 
         float falloff = 1.0 - depth_o / _FallOff;
         occ = occ / SAMPLE_COUNT * _Intensity * falloff;
 
-        half4 src = tex2D(_MainTex, i.uv);
         return half4(lerp(src.rgb, (half3)0.0, occ), src.a);
     }
 
