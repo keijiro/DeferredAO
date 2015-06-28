@@ -25,7 +25,7 @@
 	sampler2D_float _CameraDepthTexture;
     sampler2D _CameraGBufferTexture2;
 
-    const int SAMPLE_COUNT = 24;
+    const int SAMPLE_COUNT = 15;
 
     float nrand(float2 uv, float dx, float dy)
     {
@@ -46,7 +46,7 @@
         return v * lerp(0.1, 1.0, l * l);
     }
 
-    half frag_ao(v2f_img i) : SV_Target 
+    half4 frag_ao(v2f_img i) : SV_Target 
     {
         // Sample a linear depth on the depth buffer.
         float depth_o = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
@@ -87,53 +87,10 @@
         }
 
         float falloff = 1.0 - depth_o / _FallOff;
-        return occ / SAMPLE_COUNT * _Intensity * falloff;
-    }
+        occ = occ / SAMPLE_COUNT * _Intensity * falloff;
 
-    half4 frag_mul(v2f_img i) : SV_Target
-    {
         half4 src = tex2D(_MainTex, i.uv);
-        half occ = tex2D(_OccTex, i.uv).r;
-        return half4(lerp(src.rgb, (half3)0, occ), src.a);
-    }
-
-    // Coefficients for the linear sampling Gaussian filter.
-    // http://rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
-    static const float offset[3] = { 0.0, 1.3846153846, 3.2307692308 };
-    static const float weight[3] = { 0.2270270270, 0.3162162162, 0.0702702703 };
-
-    // Filter function of the separable Gaussian filter.
-    float gaussian_filter(float2 uv, float2 stride)
-    {
-        float4 s = tex2D(_MainTex, uv).r * weight[0];
-        for (int i = 1; i < 3; i++)
-        {
-            float2 d = stride * offset[i];
-            s += tex2D(_MainTex, uv + d).r * weight[i];
-            s += tex2D(_MainTex, uv - d).r * weight[i];
-        }
-        return s;
-    }
-
-    // Quarter downsampling.
-    half frag_quarter(v2f_img i) : SV_Target
-    {
-        float4 s;
-        s  = tex2D(_MainTex, i.uv + _MainTex_TexelSize * float2(-1, -1)).r;
-        s += tex2D(_MainTex, i.uv + _MainTex_TexelSize * float2(+1, -1)).r;
-        s += tex2D(_MainTex, i.uv + _MainTex_TexelSize * float2(-1, +1)).r;
-        s += tex2D(_MainTex, i.uv + _MainTex_TexelSize * float2(+1, +1)).r;
-        return s / 4;
-    }
-
-    // Separable Gaussian filter functions (horizontal/vertical).
-    half frag_blur_h(v2f_img i) : SV_Target
-    {
-        return gaussian_filter(i.uv, float2(_MainTex_TexelSize.x, 0));
-    }
-    half frag_blur_v(v2f_img i) : SV_Target
-    {
-        return gaussian_filter(i.uv, float2(0, _MainTex_TexelSize.y));
+        return half4(lerp(src.rgb, (half3)0.0, occ), src.a);
     }
 
     ENDCG
@@ -145,38 +102,6 @@
             CGPROGRAM
             #pragma vertex vert_img
             #pragma fragment frag_ao
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma vertex vert_img
-            #pragma fragment frag_quarter
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma vertex vert_img
-            #pragma fragment frag_blur_h
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma vertex vert_img
-            #pragma fragment frag_blur_v
-            ENDCG
-        }
-        Pass
-        {
-            ZTest Always Cull Off ZWrite Off
-            CGPROGRAM
-            #pragma vertex vert_img
-            #pragma fragment frag_mul
             ENDCG
         }
     }
