@@ -3,7 +3,6 @@
     Properties
     {
         _MainTex("-", 2D) = "" {}
-        _Params("-", Vector) = (1, 0.01, 1, 1)
     }
     CGINCLUDE
 
@@ -13,12 +12,16 @@
     float2 _MainTex_TexelSize;
 
     float _Radius;
-    float4 _Params; // x=radius, y=minz, z=attenuation power, w=SSAO power
+    float _FallOff;
+
+    // Camera projection matrix
+    // Note: UNITY_MATRIX_P doesn't work with pixel shaders.
+    float4x4 _Projection;
 
 	sampler2D_float _CameraDepthTexture;
     sampler2D _CameraGBufferTexture2;
 
-    const int SAMPLE_COUNT = 8;
+    const int SAMPLE_COUNT = 10;
 
     float nrand(float2 uv, float dx, float dy)
     {
@@ -41,17 +44,20 @@
 
     half4 frag(v2f_img i) : SV_Target 
     {
-        // Sample linear depth value.
-        float depth_org = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
-        if (depth_org > 0.9999) return (half4)1;
-        depth_org = LinearEyeDepth(depth_org);
+        // Sample a linear depth on the depth buffer.
+        float depth_o = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
+        if (depth_o == 1.0) return (half4)1;
+        depth_o = LinearEyeDepth(depth_o);
 
-        // Sample normal vector in the view space.
-        float3 norm_ws = tex2D(_CameraGBufferTexture2, i.uv).xyz * 2 - 1;
-        float3 norm_vs = mul((float3x3)UNITY_MATRIX_V, norm_ws);
+        // Sample a view-space normal vector on the g-buffer.
+        float3 norm_o = tex2D(_CameraGBufferTexture2, i.uv).xyz * 2 - 1;
+        norm_o = mul((float3x3)UNITY_MATRIX_V, norm_o);
 
-        // Scale factor for converting view space vector to UV offset.
-        float2 delta_to_uv = float2(_ScreenParams.y / _ScreenParams.x, 1) * _Radius / depth_org;
+        // Reconstruct the view-space position.
+        float2 p11_22 = float2(_Projection._11, _Projection._22);
+        float3 pos_o = float3((i.uv * 2 - 1) / p11_22, 1) * depth_o;
+
+        float3x3 proj = (float3x3)_Projection;
 
         float occ = 0.0;
         for (int s = 0; s < SAMPLE_COUNT; s++)
@@ -59,18 +65,23 @@
             float3 delta = spherical_kernel(i.uv, s);
 
             // Wants a sample in normal oriented hemisphere.
-            delta *= (dot(norm_vs, delta) >= 0) * 2 - 1;
+            delta *= (dot(norm_o, delta) >= 0) * 2 - 1;
 
-            float2 uv = i.uv + delta.xy * delta_to_uv;
-            float depth = depth_org + (delta.z * _Radius);
+            // Sampling point.
+            float3 pos_s = pos_o + delta * _Radius;
 
-            // Sample depth at offset location
-            float depth_s = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv));
+            // Re-project the sampling point.
+            float3 pos_sc = mul(proj, pos_s);
+            float2 uv_s = (pos_sc.xy / pos_s.z + 1) * 0.5;
 
-            occ += (depth_s < depth) && (depth - depth_s < _Radius);
+            // Sample a linear depth at the sampling point.
+            float depth_s = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uv_s));
+
+            // Occlusion test.
+            float dist = pos_s.z - depth_s;
+            occ += (dist > 0.001) * (dist < _Radius);
         }
-
-        return 1.0 - occ / SAMPLE_COUNT;
+        return 1 - lerp(occ / SAMPLE_COUNT, 0, min(depth_o / _FallOff, 1));
     }
 
     ENDCG

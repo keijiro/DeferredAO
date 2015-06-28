@@ -8,15 +8,10 @@ public class DeferredAO : MonoBehaviour
     float _radius = 1;
 
     [SerializeField]
-    float _minimumDistance = 0.001f;
+    float _fallOff = 100;
 
     [SerializeField]
-    float _attenuation = 1;
-
-    [SerializeField]
-    float _intensity = 1;
-
-    [SerializeField] Shader _shader;
+    Shader _shader;
 
     Material _material;
 
@@ -27,8 +22,11 @@ public class DeferredAO : MonoBehaviour
             _material.hideFlags = HideFlags.DontSave;
         }
 
-        _material.SetFloat("_Radius", _radius); 
-        _material.SetVector("_Params", new Vector4(_radius, _minimumDistance, _attenuation, _intensity));
+        _material.SetFloat("_Radius", _radius);
+        _material.SetFloat("_FallOff", _fallOff);
+
+        var proj = GetComponent<Camera>().projectionMatrix;
+        _material.SetMatrix("_Projection", proj);
 
         Graphics.Blit(source, destination, _material);
     }
