@@ -48,13 +48,13 @@ Shader "Hidden/DeferredAO"
     float4x4 _Projection;
 
     #if _SAMPLE_LOW
-    const int SAMPLE_COUNT = 8;
+    static const int SAMPLE_COUNT = 8;
     #elif _SAMPLE_MEDIUM
-    const int SAMPLE_COUNT = 16;
+    static const int SAMPLE_COUNT = 16;
     #elif _SAMPLE_HIGH
-    const int SAMPLE_COUNT = 24;
+    static const int SAMPLE_COUNT = 24;
     #else
-    const int SAMPLE_COUNT = 80;
+    static const int SAMPLE_COUNT = 80;
     #endif
 
     float nrand(float2 uv, float dx, float dy)
@@ -137,6 +137,7 @@ Shader "Hidden/DeferredAO"
             CGPROGRAM
             #pragma vertex vert_img
             #pragma fragment frag_ao
+            #pragma target 3.0
             ENDCG
         }
     }
