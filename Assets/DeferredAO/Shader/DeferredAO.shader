@@ -120,7 +120,7 @@ Shader "Hidden/DeferredAO"
         }
 
         float falloff = 1.0 - depth_o / _FallOff;
-        occ *= _Intensity * falloff / SAMPLE_COUNT;
+        occ = saturate(occ * _Intensity * falloff / SAMPLE_COUNT);
 
         return half4(lerp(src.rgb, (half3)0.0, occ), src.a);
     }
