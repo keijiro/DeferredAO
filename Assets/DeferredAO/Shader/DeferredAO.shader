@@ -38,14 +38,11 @@ Shader "Hidden/DeferredAO"
 
 	sampler2D_float _CameraDepthTexture;
     sampler2D _CameraGBufferTexture2;
+    float4x4 _WorldToCamera;
 
     float _Intensity;
     float _Radius;
     float _FallOff;
-
-    // Camera projection matrix
-    // Note: UNITY_MATRIX_P doesn't work with pixel shaders.
-    float4x4 _Projection;
 
     #if _SAMPLE_LOW
     static const int SAMPLE_COUNT = 8;
@@ -87,13 +84,13 @@ Shader "Hidden/DeferredAO"
 
         // Sample a view-space normal vector on the g-buffer.
         float3 norm_o = tex2D(_CameraGBufferTexture2, i.uv).xyz * 2 - 1;
-        norm_o = mul((float3x3)UNITY_MATRIX_V, norm_o);
+        norm_o = mul((float3x3)_WorldToCamera, norm_o);
 
         // Reconstruct the view-space position.
-        float2 p11_22 = float2(_Projection._11, _Projection._22);
+        float2 p11_22 = float2(unity_CameraProjection._11, unity_CameraProjection._22);
         float3 pos_o = float3((i.uv * 2 - 1) / p11_22, 1) * depth_o;
 
-        float3x3 proj = (float3x3)_Projection;
+        float3x3 proj = (float3x3)unity_CameraProjection;
 
         float occ = 0.0;
         for (int s = 0; s < SAMPLE_COUNT; s++)

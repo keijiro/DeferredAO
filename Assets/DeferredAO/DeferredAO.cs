@@ -105,7 +105,6 @@ public class DeferredAO : MonoBehaviour
         _material.SetFloat("_Radius", _sampleRadius);
         _material.SetFloat("_Intensity", _intensity);
         _material.SetFloat("_FallOff", _fallOffDistance);
-        _material.SetMatrix("_Projection", GetComponent<Camera>().projectionMatrix);
 
         _material.shaderKeywords = null;
 
