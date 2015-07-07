@@ -80,7 +80,9 @@ Shader "Hidden/DeferredAO"
         // Sample a linear depth on the depth buffer.
         float depth_o = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.uv);
         depth_o = LinearEyeDepth(depth_o);
-        if (depth_o > _FallOff) return src;
+
+        // This early-out flow control is not allowed in HLSL.
+        // if (depth_o > _FallOff) return src;
 
         // Sample a view-space normal vector on the g-buffer.
         float3 norm_o = tex2D(_CameraGBufferTexture2, i.uv).xyz * 2 - 1;
