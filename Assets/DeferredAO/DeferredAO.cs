@@ -1,5 +1,5 @@
 ﻿//
-// Deferred AO - G-buffer based SSAO effect
+// Deferred AO - SSAO image effect for deferred shading
 //
 // Copyright (C) 2015 Keijiro Takahashi
 //
@@ -91,12 +91,23 @@ public class DeferredAO : MonoBehaviour
 
     Material _material;
 
+    bool CheckDeferredShading()
+    {
+        var path = GetComponent<Camera>().actualRenderingPath;
+        return path == RenderingPath.DeferredShading;
+    }
+
     #endregion
 
     #region MonoBehaviour Functions
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
+        if (!CheckDeferredShading()) {
+            Graphics.Blit(source, destination);
+            return;
+        }
+
         if (_material == null) {
             _material = new Material(_shader);
             _material.hideFlags = HideFlags.DontSave;

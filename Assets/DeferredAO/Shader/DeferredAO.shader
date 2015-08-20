@@ -1,5 +1,5 @@
 ﻿//
-// Deferred AO - G-buffer based SSAO effect
+// Deferred AO - SSAO image effect for deferred shading
 //
 // Copyright (C) 2015 Keijiro Takahashi
 //
