@@ -22,7 +22,6 @@
 //
 using UnityEngine;
 
-[ImageEffectOpaque]
 [ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
 [AddComponentMenu("Image Effects/Rendering/Deferred AO")]
@@ -101,6 +100,7 @@ public class DeferredAO : MonoBehaviour
 
     #region MonoBehaviour Functions
 
+    [ImageEffectOpaque]
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         if (!CheckDeferredShading()) {
